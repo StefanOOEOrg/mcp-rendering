@@ -5,6 +5,7 @@ import time
 import httpx2
 import pytest
 
+import config
 import renderer
 from tests.conftest import TOKEN
 
@@ -21,7 +22,7 @@ def test_render_and_send_uploads_the_png_and_removes_it(http, isolated_config):
     assert not temp_pngs(isolated_config)
     backend_url, backend_kwargs = http.calls[0]
     assert backend_url.endswith("/generate")
-    assert backend_kwargs["json"] == {"prompt": "a fox", "width": 1024, "height": 1024}
+    assert backend_kwargs["json"] == {"prompt": "a fox", **config.RENDER_DEFAULTS}
     assert http.calls[1][1]["data"] == {"chat_id": "42", "caption": "Ein Fuchs"}
 
 
@@ -89,3 +90,18 @@ def test_cleanup_removes_only_old_files_with_the_prefix(isolated_config):
     os.utime(foreign, (past, past))
     assert renderer.cleanup_orphans() == [old]
     assert fresh.exists() and foreign.exists()
+
+
+def test_overrides_replace_single_defaults_and_none_keeps_them():
+    """Only non-None overrides change the request; everything else stays default."""
+    payload = renderer.build_payload("a fox", {"model": "qwen", "width": 1344, "seed": 7,
+                                               "hires": False, "steps": None})
+    assert payload["model"] == "qwen" and payload["width"] == 1344 and payload["seed"] == 7
+    assert payload["hires"] is False
+    assert payload["steps"] == config.RENDER_DEFAULTS["steps"]
+    assert payload["height"] == config.RENDER_DEFAULTS["height"]
+
+
+def test_default_payload_leaves_seed_to_the_backend():
+    """Without a seed the bridge picks a random one."""
+    assert "seed" not in renderer.build_payload("a fox")

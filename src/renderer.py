@@ -23,16 +23,24 @@ class RenderError(RuntimeError):
     """Rendering or delivery failed; the message is safe to show to the agent."""
 
 
-def generate_image(prompt: str, width: int = 1024, height: int = 1024) -> Path:
+def build_payload(prompt: str, overrides: dict | None = None) -> dict:
+    """Request body: config.RENDER_DEFAULTS, overridden by every non-None value in overrides."""
+    payload = {"prompt": prompt, **config.RENDER_DEFAULTS}
+    payload.update({k: v for k, v in (overrides or {}).items() if v is not None})
+    return payload
+
+
+def generate_image(prompt: str, overrides: dict | None = None) -> Path:
     """Render prompt on the backend and return the path of a temp PNG.
 
+    overrides replace single fields of config.RENDER_DEFAULTS (None = keep the default).
     The caller MUST remove the file right after delivering it (try/finally).
     Timeouts, connection errors and non-200 responses propagate; in that case
     no file is created.
     """
     resp = httpx2.post(
         f"{config.RENDER_BACKEND}/generate",
-        json={"prompt": prompt, "width": width, "height": height},
+        json=build_payload(prompt, overrides),
         timeout=httpx2.Timeout(config.RENDER_TIMEOUT, connect=10),
     )
     if resp.status_code != 200:
@@ -96,10 +104,10 @@ def cleanup_orphans(max_age: int | None = None) -> list[Path]:
     return removed
 
 
-def render_and_send(prompt: str, caption: str = "", width: int = 1024, height: int = 1024) -> None:
+def render_and_send(prompt: str, caption: str = "", overrides: dict | None = None) -> None:
     """Render, deliver to Telegram and remove the temp file in every case."""
     cleanup_orphans()
-    path = generate_image(prompt, width, height)
+    path = generate_image(prompt, overrides)
     try:
         send_photo(path, caption)
     finally:

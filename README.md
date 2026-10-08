@@ -24,7 +24,17 @@ mcp-rendering/
 
 | Tool | Description |
 |------|-------------|
-| `render_image(text, caption="")` | Renders `text` (English image prompt, 1024×1024) and sends it as a photo to the configured Telegram chat with an optional German `caption` (max. 1024 characters). Returns a short confirmation; errors (backend down, timeout, Telegram) are raised as `ToolError`. |
+| `render_image(text, caption="", **settings)` | Renders `text` (English image prompt) and sends it as a photo to the configured Telegram chat with an optional German `caption` (max. 1024 characters). Returns a short confirmation; errors (backend down, timeout, invalid setting, Telegram) are raised as `ToolError`. |
+
+**Render settings:** every field of the GX10 bridge can be overridden per call (`model`, `preset`, `width`, `height`, `seed`, `steps`, `guidance`, `sampler`, `scheduler`, `hires`, `face_fix`, `hand_fix`, `negative`, `lora_strength`, `lora2`). Anything not given uses `RENDER_DEFAULTS` in `src/config.py`:
+
+```python
+{"model": "flux-lora", "preset": "realistic", "width": 1024, "height": 1024,
+ "steps": 32, "guidance": 1.85, "sampler": "dpmpp_2m", "scheduler": "beta",
+ "hires": {"scale": 1.5, "denoise": 0.4, "steps": 25}, "face_fix": {"steps": 25, "denoise": 0.4},
+ "hand_fix": True, "negative": "", "lora_strength": 0.2, "lora2": 1.33}
+```
+`seed` is left to the bridge (random). With these defaults a render takes ~2-3 minutes (output 1536×1536 after hires), so the server waits up to `RENDER_TIMEOUT` = 600 s and Hermes needs a longer MCP tool timeout (`timeout: 900` in the `mcp_servers` entry).
 
 Error behaviour: timeouts, refused connections and non-200 / non-PNG answers of the backend create no file. The bot token is masked in every error message.
 
@@ -57,6 +67,7 @@ mcp-rendering:
     TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
     TELEGRAM_CHAT_ID: ${TELEGRAM_HOME_CHANNEL}
     TELEGRAM_THREAD_ID: ${TELEGRAM_HOME_CHANNEL_THREAD_ID}   # only where the profile has one
+  timeout: 900   # a render with the default settings takes ~2-3 min (Hermes default: 300 s)
 ```
 
 Orphan sweep (user `hermes`, `~/.config/systemd/user/mcp-rendering-sweep.{service,timer}`, every 10 minutes):

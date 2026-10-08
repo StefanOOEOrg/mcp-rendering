@@ -24,3 +24,12 @@ def test_render_image_turns_backend_errors_into_tool_errors(http):
     http.backend = httpx2.ConnectError("connection refused")
     with pytest.raises(ToolError, match="ConnectError"):
         render_image("a fox")
+
+
+def test_render_image_passes_overrides_to_the_backend(http):
+    """Settings given by the caller reach the bridge; unset ones keep the defaults."""
+    render_image("a fox", model="flux", width=1344, height=768, face_fix=False, lora2=0)
+    sent = http.calls[0][1]["json"]
+    assert (sent["model"], sent["width"], sent["height"]) == ("flux", 1344, 768)
+    assert sent["face_fix"] is False and sent["lora2"] == 0
+    assert sent["preset"] == "realistic" and sent["steps"] == 32
