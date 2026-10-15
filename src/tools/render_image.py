@@ -1,4 +1,4 @@
-"""render_image: draw a picture on the GX10 and send it to the user's Telegram chat."""
+"""render_image: draw a picture on the LLM server and send it to the user's Telegram chat."""
 from typing import Annotated, Literal
 
 import httpx2
@@ -48,7 +48,7 @@ def render_image(  # pylint: disable=too-many-arguments,too-many-locals
     lora2: Annotated[float | bool | None, _doc("Second LoRA (anatomy) 0-2 or "
                                                "true/false; default 1.33.")] = None,
 ) -> str:
-    """Render an image locally on the GX10 and send it straight to Stefan's Telegram chat.
+    """Render an image locally on the LLM server and send it straight to the user's Telegram chat.
 
     Use it to visualise something, e.g. "fass unsere Unterhaltung als Bild zusammen".
     Image models cannot render longer text: turn topics into symbols/scenes, at most

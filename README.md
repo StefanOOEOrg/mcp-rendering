@@ -1,6 +1,6 @@
 # MCP Server for image rendering (mcp-rendering)
 
-An MCP server with a single tool, `render_image`: it renders a picture on the GX10 (ComfyUI wrapper, `POST /generate` → PNG) and sends it straight to the user's Telegram chat. Typical use: "fass unsere Unterhaltung als Bild zusammen" — the agent turns the topics into an English image prompt and puts the actual summary into the caption.
+An MCP server with a single tool, `render_image`: it renders a picture on the LLM server (ComfyUI wrapper, `POST /generate` → PNG) and sends it straight to the user's Telegram chat. Typical use: "fass unsere Unterhaltung als Bild zusammen" — the agent turns the topics into an English image prompt and puts the actual summary into the caption.
 
 **No image is kept.** The PNG is written to a temp file (`/tmp/mcp-rendering-*.png`) only for the duration of the Telegram upload and is removed in a `finally` block, also when the upload fails. There is no output directory and no history. Leftovers from a crash between writing and removing are swept before every render and by a systemd timer (files older than 10 minutes).
 
@@ -26,7 +26,7 @@ mcp-rendering/
 |------|-------------|
 | `render_image(text, caption="", **settings)` | Renders `text` (English image prompt) and sends it as a photo to the configured Telegram chat with an optional German `caption` (max. 1024 characters). Returns a short confirmation; errors (backend down, timeout, invalid setting, Telegram) are raised as `ToolError`. |
 
-**Render settings:** every field of the GX10 bridge can be overridden per call (`model`, `preset`, `width`, `height`, `seed`, `steps`, `guidance`, `sampler`, `scheduler`, `hires`, `face_fix`, `hand_fix`, `negative`, `lora_strength`, `lora2`). Anything not given uses `RENDER_DEFAULTS` in `src/config.py`:
+**Render settings:** every field of the render bridge can be overridden per call (`model`, `preset`, `width`, `height`, `seed`, `steps`, `guidance`, `sampler`, `scheduler`, `hires`, `face_fix`, `hand_fix`, `negative`, `lora_strength`, `lora2`). Anything not given uses `RENDER_DEFAULTS` in `src/config.py`:
 
 ```python
 {"model": "flux-lora", "preset": "realistic", "width": 1024, "height": 1024,
@@ -47,22 +47,16 @@ cp .env.template .env        # fill in the bot token and chat id
 venv/bin/python -m pytest
 ```
 
-## Deployment (Hermes on the ThinkCentre)
+## Deployment (Hermes)
 
-This repo is a development repo only — nothing runs from it. Hermes runs the server from a read-only release built from a **committed** ref:
+Install it with its own venv and `.env` (see `.env.template`).
 
-```bash
-git commit …                                  # changes must be committed to be deployable
-sudo hermes-deploy mcp-rendering --restart    # → /opt/hermes-apps/mcp-rendering/releases/<sha>, restarts the gateways
-sudo hermes-deploy --rollback mcp-rendering   # back to the previous release
-```
-
-Hermes registration (`mcp_servers` in the profile's `config.yaml`, runs as user `hermes`). Every profile sends through **its own** bot:
+Hermes registration (`mcp_servers` in the profile's `config.yaml`). Every profile sends through **its own** bot:
 
 ```yaml
 mcp-rendering:
-  command: /opt/hermes-apps/mcp-rendering/current/.venv/bin/python
-  args: [/opt/hermes-apps/mcp-rendering/current/src/main.py]
+  command: /path/to/mcp-rendering/.venv/bin/python
+  args: [/path/to/mcp-rendering/src/main.py]
   env:
     TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
     TELEGRAM_CHAT_ID: ${TELEGRAM_HOME_CHANNEL}
@@ -70,10 +64,8 @@ mcp-rendering:
   timeout: 900   # a render with the default settings takes ~2-3 min (Hermes default: 300 s)
 ```
 
-Orphan sweep (user `hermes`, `~/.config/systemd/user/mcp-rendering-sweep.{service,timer}`, every 10 minutes):
+Orphan sweep (e.g. a systemd user timer every 10 minutes):
 
 ```ini
-ExecStart=/opt/hermes-apps/mcp-rendering/current/.venv/bin/python /opt/hermes-apps/mcp-rendering/current/src/cleanup.py
+ExecStart=/path/to/mcp-rendering/.venv/bin/python /path/to/mcp-rendering/src/cleanup.py
 ```
-
-`hermes-deploy` and the overall layout are documented in the `tc-ops` repo.

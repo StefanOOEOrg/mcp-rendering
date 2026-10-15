@@ -1,4 +1,4 @@
-"""Render an image on the GX10 and deliver it to Telegram without keeping it.
+"""Render an image on the LLM server and deliver it to Telegram without keeping it.
 
 The PNG is written to a temp file only for the duration of the Telegram upload
 and removed in a finally block, whether the upload succeeds or not. Leftovers

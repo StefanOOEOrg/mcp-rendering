@@ -14,10 +14,10 @@ load_dotenv()
 # === LOGGING ===
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 
-# === RENDER BACKEND (ComfyUI wrapper on the GX10) ===
-RENDER_BACKEND = os.getenv("RENDER_BACKEND", "http://192.168.178.87:8002").rstrip("/")
+# === RENDER BACKEND (ComfyUI wrapper on the LLM server) ===
+RENDER_BACKEND = os.getenv("RENDER_BACKEND", "http://127.0.0.1:8002").rstrip("/")
 # The default settings below (flux-lora, hires + face/hand fix) take ~2-3 min per image,
-# a model switch on the GX10 adds to that; generous so a busy GPU does not fail the call.
+# a model switch on the LLM server adds to that; generous so a busy GPU does not fail the call.
 RENDER_TIMEOUT = float(os.getenv("RENDER_TIMEOUT", "600"))
 
 # Request fields sent with every render unless the caller overrides them (bridge API of
