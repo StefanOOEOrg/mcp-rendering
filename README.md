@@ -1,8 +1,30 @@
 # MCP Server for image rendering (mcp-rendering)
 
+[![CI](https://github.com/StefanOOEOrg/mcp-rendering/actions/workflows/ci.yml/badge.svg)](https://github.com/StefanOOEOrg/mcp-rendering/actions/workflows/ci.yml)
+
 An MCP server with a single tool, `render_image`: it renders a picture on the LLM server (ComfyUI wrapper, `POST /generate` → PNG) and sends it straight to the user's Telegram chat. Typical use: "fass unsere Unterhaltung als Bild zusammen" — the agent turns the topics into an English image prompt and puts the actual summary into the caption.
 
 **No image is kept.** The PNG is written to a temp file (`/tmp/mcp-rendering-*.png`) only for the duration of the Telegram upload and is removed in a `finally` block, also when the upload fails. There is no output directory and no history. Leftovers from a crash between writing and removing are swept before every render and by a systemd timer (files older than 10 minutes).
+
+## Requirements
+
+- **Python 3.11 or newer** (the CI runs 3.11 and 3.14).
+- A reachable render backend: the ComfyUI wrapper on the LLM server (`POST /generate` → PNG),
+  configured via `RENDER_BACKEND`.
+- A Telegram bot plus the chat id the picture should go to (`TELEGRAM_BOT_TOKEN`,
+  `TELEGRAM_CHAT_ID`, optional `TELEGRAM_THREAD_ID`).
+
+## Installation
+
+```bash
+git clone https://github.com/StefanOOEOrg/mcp-rendering.git
+cd mcp-rendering
+python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
+cp .env.template .env       # fill in the Telegram bot and RENDER_BACKEND
+```
+
+Then register it in your MCP client (see [Deployment (Hermes)](#deployment-hermes)) — note the long
+tool timeout, a render takes minutes.
 
 ## Project Structure
 
@@ -69,3 +91,20 @@ Orphan sweep (e.g. a systemd user timer every 10 minutes):
 ```ini
 ExecStart=/path/to/mcp-rendering/.venv/bin/python /path/to/mcp-rendering/src/cleanup.py
 ```
+
+## Scope / Limitations
+
+- A single-user tool, not a service: it runs locally over stdio — no port of its own, no
+  authentication, no multi-user support.
+- It needs a working render backend and a Telegram bot; without them `render_image` fails with a
+  readable `ToolError`.
+- Renders are slow (minutes, see the defaults above) — the tool timeout in the MCP client has to be
+  raised, otherwise the call is cut off while the backend still renders.
+- Images are not stored: the PNG lives in a temp file only for the Telegram upload and is deleted
+  afterwards. There is no gallery, no history and no way to re-send an old render.
+- The bot token is masked in error messages, but it still lives in plain text in `.env` — keep that
+  file out of the repo and out of logs.
+
+## License
+
+[MIT](LICENSE)
