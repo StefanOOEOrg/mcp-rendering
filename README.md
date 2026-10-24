@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/StefanOOEOrg/mcp-rendering/actions/workflows/ci.yml/badge.svg)](https://github.com/StefanOOEOrg/mcp-rendering/actions/workflows/ci.yml)
 
-An MCP server with a single tool, `render_image`: it renders a picture on the LLM server (ComfyUI wrapper, `POST /generate` → PNG) and sends it straight to the user's Telegram chat. Typical use: "fass unsere Unterhaltung als Bild zusammen" — the agent turns the topics into an English image prompt and puts the actual summary into the caption.
+An MCP server with a single tool, `render_image`: it renders a picture on the LLM server (ComfyUI wrapper, `POST /generate` → PNG) and sends it straight to the user's Telegram chat. Typical use: the user asks for an image of the conversation so far — the agent turns the topics into an English image prompt and puts the actual summary into the caption.
 
 **No image is kept.** The PNG is written to a temp file (`/tmp/mcp-rendering-*.png`) only for the duration of the Telegram upload and is removed in a `finally` block, also when the upload fails. There is no output directory and no history. Leftovers from a crash between writing and removing are swept before every render and by a systemd timer (files older than 10 minutes).
 
@@ -46,7 +46,7 @@ mcp-rendering/
 
 | Tool | Description |
 |------|-------------|
-| `render_image(text, caption="", **settings)` | Renders `text` (English image prompt) and sends it as a photo to the configured Telegram chat with an optional German `caption` (max. 1024 characters). Returns a short confirmation; errors (backend down, timeout, invalid setting, Telegram) are raised as `ToolError`. |
+| `render_image(text, caption="", **settings)` | Renders `text` (English image prompt) and sends it as a photo to the configured Telegram chat with an optional `caption` (max. 1024 characters). Returns a short confirmation; errors (backend down, timeout, invalid setting, Telegram) are raised as `ToolError`. |
 
 **Render settings:** every field of the render bridge can be overridden per call (`model`, `preset`, `width`, `height`, `seed`, `steps`, `guidance`, `sampler`, `scheduler`, `hires`, `face_fix`, `hand_fix`, `negative`, `lora_strength`, `lora2`). Anything not given uses `RENDER_DEFAULTS` in `src/config.py`:
 
