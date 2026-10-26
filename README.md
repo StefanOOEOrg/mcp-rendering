@@ -1,6 +1,7 @@
 # MCP Server for image rendering (mcp-rendering)
 
 [![CI](https://github.com/StefanOOEOrg/mcp-rendering/actions/workflows/ci.yml/badge.svg)](https://github.com/StefanOOEOrg/mcp-rendering/actions/workflows/ci.yml)
+[![M8ven Verified](https://m8ven.ai/badge/mcp/stefanooeorg-mcp-rendering-1motp0?variant=verified)](https://m8ven.ai/mcp/stefanooeorg-mcp-rendering-1motp0)
 
 An MCP server with a single tool, `render_image`: it renders a picture on the LLM server (ComfyUI wrapper, `POST /generate` → PNG) and sends it straight to the user's Telegram chat. Typical use: the user asks for an image of the conversation so far — the agent turns the topics into an English image prompt and puts the actual summary into the caption.
 
