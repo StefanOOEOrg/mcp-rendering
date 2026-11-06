@@ -15,4 +15,4 @@ Initial release.
   failure); the bot token is masked in every message.
 - Configuration via `.env` (`TELEGRAM_BOT_TOKEN`, `_CHAT_ID`, `_THREAD_ID`, `RENDER_BACKEND`,
   `RENDER_TIMEOUT`, `LOG_LEVEL`); `.env.template` ships the template.
-- CI: pytest + pylint on Python 3.11 and 3.14.
+- CI: pytest + ruff on Python 3.11 and 3.14.

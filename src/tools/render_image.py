@@ -19,7 +19,7 @@ def _doc(text: str):
 
 
 @server.tool()
-def render_image(  # pylint: disable=too-many-arguments,too-many-locals
+def render_image(
     text: Annotated[str, _doc("Image prompt in ENGLISH, concrete and visual.")],
     caption: Annotated[str, _doc("Optional German caption, max. 1024 characters.")] = "",
     *,
